@@ -19,6 +19,10 @@ class ImageService:
             db.session.add(image)
             db.session.commit()
 
+            from tasks.celery_tasks import process_image_async
+
+            process_image_async.delay(image.id)
+
             return {"id": image.id, "status": "processing"}
 
         except Exception as e:
