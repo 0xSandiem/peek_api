@@ -15,6 +15,9 @@ def make_celery(app=None):
         config_name = os.environ.get("FLASK_ENV", "development")
         app.config.from_object(config_by_name[config_name])
 
+        with app.app_context():
+            db.init_app(app)
+
     celery = Celery(
         app.import_name,
         broker=app.config["CELERY_BROKER_URL"],
@@ -22,6 +25,7 @@ def make_celery(app=None):
     )
 
     celery.conf.update(app.config)
+    celery.flask_app = app
 
     class ContextTask(celery.Task):
         def __call__(self, *args, **kwargs):
@@ -37,31 +41,28 @@ celery = make_celery()
 
 @celery.task(name="tasks.celery_tasks.process_image_async")
 def process_image_async(image_id):
-    with celery.flask_app.app_context():
-        image = db.session.get(Image, image_id)
+    image = db.session.get(Image, image_id)
 
-        if not image:
-            return {"error": "Image not found"}
+    if not image:
+        return {"error": "Image not found"}
 
-        insights_data = CVService.process_image(image.filepath)
+    insights_data = CVService.process_image(image.filepath)
 
-        if "error" in insights_data:
-            image.processed = True
-            db.session.commit()
-            return {"error": insights_data["error"]}
-
-        existing_insights = (
-            db.session.query(Insights).filter_by(image_id=image_id).first()
-        )
-
-        if existing_insights:
-            for key, value in insights_data.items():
-                setattr(existing_insights, key, value)
-        else:
-            insights = Insights(image_id=image_id, **insights_data)
-            db.session.add(insights)
-
+    if "error" in insights_data:
         image.processed = True
         db.session.commit()
+        return {"error": insights_data["error"]}
 
-        return {"image_id": image_id, "status": "completed"}
+    existing_insights = db.session.query(Insights).filter_by(image_id=image_id).first()
+
+    if existing_insights:
+        for key, value in insights_data.items():
+            setattr(existing_insights, key, value)
+    else:
+        insights = Insights(image_id=image_id, **insights_data)
+        db.session.add(insights)
+
+    image.processed = True
+    db.session.commit()
+
+    return {"image_id": image_id, "status": "completed"}
