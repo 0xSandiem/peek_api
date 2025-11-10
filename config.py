@@ -28,18 +28,20 @@ class Config:
         or "redis://localhost:6379/0"
     )
 
-    CELERYD_POOL = os.environ.get("CELERYD_POOL", "solo")
     CELERYD_POOL_RESTARTS = True
 
 
 class DevelopmentConfig(Config):
     DEBUG = True
     TESTING = False
+    CELERYD_POOL = os.environ.get("CELERYD_POOL", "solo")
 
 
 class ProductionConfig(Config):
     DEBUG = False
     TESTING = False
+    CELERYD_POOL = os.environ.get("CELERYD_POOL", "prefork")
+    CELERYD_CONCURRENCY = int(os.environ.get("CELERYD_CONCURRENCY", 4))
 
 
 class TestingConfig(Config):
