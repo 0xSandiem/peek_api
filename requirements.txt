@@ -1,0 +1,20 @@
+# Flask and web framework
+flask
+flask-sqlalchemy
+flask-cors
+
+# Computer vision and image processing
+opencv-python
+numpy
+pillow
+
+# Task queue and caching
+celery
+redis
+
+# Database and environment
+psycopg2-binary
+python-dotenv
+
+# Testing
+pytest
