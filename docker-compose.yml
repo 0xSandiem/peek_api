@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   postgres:
@@ -30,6 +30,49 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  web:
+    build: .
+    container_name: peek_web
+    command: ./scripts/entrypoint-web.sh
+    environment:
+      FLASK_ENV: development
+      DATABASE_URL: postgresql://peek_user:peek_password@postgres:5432/peek_db
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  worker:
+    build: .
+    container_name: peek_worker
+    command: ./scripts/entrypoint-worker.sh
+    environment:
+      FLASK_ENV: development
+      DATABASE_URL: postgresql://peek_user:peek_password@postgres:5432/peek_db
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
 volumes:
   postgres_data:
