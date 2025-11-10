@@ -28,6 +28,9 @@ class Config:
         or "redis://localhost:6379/0"
     )
 
+    CELERYD_POOL = os.environ.get("CELERYD_POOL", "solo")
+    CELERYD_POOL_RESTARTS = True
+
 
 class DevelopmentConfig(Config):
     DEBUG = True
