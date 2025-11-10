@@ -21,6 +21,7 @@ def create_app(config_name=None):
     CORS(app)
 
     with app.app_context():
+        from app import models
         from app.routes import api
 
         app.register_blueprint(api.bp)
