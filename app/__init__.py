@@ -26,6 +26,4 @@ def create_app(config_name=None):
 
         app.register_blueprint(api.bp)
 
-        db.create_all()
-
     return app

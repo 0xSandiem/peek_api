@@ -31,6 +31,9 @@ cp .env.example .env
 # Create database
 createdb peek_db
 
+# Run database migrations
+alembic upgrade head
+
 # Start services
 brew services start postgresql@14
 brew services start redis
