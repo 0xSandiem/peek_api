@@ -3,6 +3,7 @@ from io import BytesIO
 from flask import Blueprint, current_app, jsonify, request, send_file
 from werkzeug.utils import secure_filename
 
+from app import db
 from app.services.image_service import ImageService
 from app.services.storage_service import StorageService
 
@@ -11,7 +12,26 @@ bp = Blueprint("api", __name__, url_prefix="/api")
 
 @bp.route("/health", methods=["GET"])
 def health_check():
-    return jsonify({"status": "ok"}), 200
+    health_status = {"status": "ok"}
+
+    try:
+        db.session.execute(db.text("SELECT 1"))
+        health_status["database"] = "connected"
+    except Exception:
+        health_status["database"] = "disconnected"
+        health_status["status"] = "degraded"
+
+    try:
+        from celery import current_app as celery_app
+
+        celery_app.connection().ensure_connection(max_retries=1)
+        health_status["redis"] = "connected"
+    except Exception:
+        health_status["redis"] = "disconnected"
+        health_status["status"] = "degraded"
+
+    status_code = 200 if health_status["status"] == "ok" else 503
+    return jsonify(health_status), status_code
 
 
 @bp.route("/analyze", methods=["POST"])

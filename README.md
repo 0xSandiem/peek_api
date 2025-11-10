@@ -213,41 +213,63 @@ Current test coverage: 63 tests across models, services, analyzers, validators, 
 
 ## Deployment (Railway)
 
-### Required Services
+### Setup Steps
 
-- PostgreSQL (database)
-- Redis (message broker)
-- Web service (Flask API)
-- Worker service (Celery)
+1. **Create Railway Project**
+   - Go to [railway.app](https://railway.app)
+   - Create new project
+   - Add PostgreSQL service from template
+   - Add Redis service from template
 
-### Environment Variables
+2. **Deploy Web Service**
+   - Create new service from GitHub repo
+   - Select your repository and branch
+   - Railway will auto-detect Python and use nixpacks.toml
+   - Web service will use Procfile web command
+
+3. **Deploy Worker Service**
+   - Create another service from same GitHub repo
+   - Set start command: `celery -A tasks.celery_tasks.celery worker --loglevel=info`
+   - Or use Procfile worker command
+
+4. **Configure Environment Variables**
+
+Set these variables in **both web and worker services**:
 
 ```bash
 FLASK_ENV=production
-SECRET_KEY=<generate-strong-key>
-DATABASE_URL=<railway-postgres-url>
-REDIS_URL=<railway-redis-url>
-CELERY_BROKER_URL=<railway-redis-url>
-CELERY_RESULT_BACKEND=<railway-redis-url>
+SECRET_KEY=<generate-strong-random-key>
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+REDIS_URL=${{Redis.REDIS_URL}}
+CELERY_BROKER_URL=${{Redis.REDIS_URL}}
+CELERY_RESULT_BACKEND=${{Redis.REDIS_URL}}
 CELERYD_POOL=prefork
 CELERYD_CONCURRENCY=4
+UPLOAD_FOLDER=/app/uploads
 ```
 
-### Service Configuration
+**Note**: Railway automatically provides `DATABASE_URL` and `REDIS_URL` when you link services.
 
-**Web Service Start Command:**
+### Health Check
+
+Verify deployment:
 ```bash
-python3 run.py
+curl https://your-app.railway.app/api/health
 ```
 
-**Worker Service Start Command:**
-```bash
-celery -A tasks.celery_tasks.celery worker --loglevel=info
+Expected response:
+```json
+{
+  "status": "ok",
+  "database": "connected",
+  "redis": "connected"
+}
 ```
 
-### Notes
+### Important Notes
 
-- Production uses `prefork` pool for optimal performance on Linux
-- Development (macOS) uses `solo` pool to avoid fork safety issues with OpenCV/Tesseract
-- Concurrency defaults to 4 workers, adjust via `CELERYD_CONCURRENCY`
-- Ensure uploads directory is persistent or use cloud storage (S3)
+- **Database Migrations**: Run automatically on web service startup via entrypoint script
+- **Persistent Storage**: Railway has ephemeral filesystem. For production, migrate uploads to S3/Cloudinary
+- **Worker Pool**: Uses `prefork` with 4 workers on Linux for optimal performance
+- **Scaling**: Increase CELERYD_CONCURRENCY for more worker processes
+- **Monitoring**: Check logs in Railway dashboard for both web and worker services
