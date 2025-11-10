@@ -5,6 +5,7 @@ from flask import Flask
 
 from app import db
 from app.models import Image, Insights
+from app.services.annotation_service import AnnotationService
 from app.services.cv_service import CVService
 from config import config_by_name
 
@@ -64,5 +65,12 @@ def process_image_async(image_id):
 
     image.processed = True
     db.session.commit()
+
+    if insights_data.get("faces_detected", 0) > 0:
+        try:
+            face_locations = insights_data.get("face_locations", [])
+            AnnotationService.create_annotated_image(image.filepath, face_locations)
+        except Exception:
+            pass
 
     return {"image_id": image_id, "status": "completed"}
