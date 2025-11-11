@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 class StorageService:
     MAX_RETRIES = 3
-    RETRY_DELAY = 1  # seconds
+    RETRY_DELAY = 1
 
     @staticmethod
     def _retry_with_backoff(func, *args, **kwargs):
@@ -37,7 +37,6 @@ class StorageService:
                 if attempt == StorageService.MAX_RETRIES - 1:
                     raise
 
-                # Exponential backoff: 1s, 2s, 4s
                 delay = StorageService.RETRY_DELAY * (2**attempt)
                 logger.warning(
                     f"R2 operation failed (attempt {attempt + 1}/{StorageService.MAX_RETRIES}): {str(e)}. "
