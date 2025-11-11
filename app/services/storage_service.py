@@ -1,11 +1,13 @@
+import logging
 import os
+import time
 import uuid
 from datetime import datetime
 from io import BytesIO
 
 import boto3
 from botocore.client import Config
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, EndpointConnectionError
 from flask import current_app
 from PIL import Image as PILImage
 
@@ -18,8 +20,31 @@ from app.utils.validators import (
     validate_image_content,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class StorageService:
+    MAX_RETRIES = 3
+    RETRY_DELAY = 1  # seconds
+
+    @staticmethod
+    def _retry_with_backoff(func, *args, **kwargs):
+        """Execute function with exponential backoff retry logic."""
+        for attempt in range(StorageService.MAX_RETRIES):
+            try:
+                return func(*args, **kwargs)
+            except (ClientError, EndpointConnectionError) as e:
+                if attempt == StorageService.MAX_RETRIES - 1:
+                    raise
+
+                # Exponential backoff: 1s, 2s, 4s
+                delay = StorageService.RETRY_DELAY * (2**attempt)
+                logger.warning(
+                    f"R2 operation failed (attempt {attempt + 1}/{StorageService.MAX_RETRIES}): {str(e)}. "
+                    f"Retrying in {delay}s..."
+                )
+                time.sleep(delay)
+
     @staticmethod
     def _get_r2_client():
         account_id = current_app.config.get("R2_ACCOUNT_ID")
@@ -28,6 +53,7 @@ class StorageService:
         region = current_app.config.get("R2_REGION", "auto")
 
         if not all([account_id, access_key, secret_key]):
+            logger.error("R2 credentials not configured properly")
             raise ValueError("R2 credentials not configured")
 
         endpoint_url = f"https://{account_id}.r2.cloudflarestorage.com"
@@ -58,22 +84,32 @@ class StorageService:
 
             file_storage.seek(0)
 
-            s3_client.upload_fileobj(
-                file_storage,
-                bucket_name,
-                object_key,
-                ExtraArgs={
-                    "ContentType": f"image/{ext}",
-                    "CacheControl": "public, max-age=31536000",
-                },
-            )
+            logger.info(f"Uploading file to R2: {object_key}")
 
+            def _upload():
+                s3_client.upload_fileobj(
+                    file_storage,
+                    bucket_name,
+                    object_key,
+                    ExtraArgs={
+                        "ContentType": f"image/{ext}",
+                        "CacheControl": "public, max-age=31536000",
+                    },
+                )
+
+            StorageService._retry_with_backoff(_upload)
+
+            logger.info(f"Successfully uploaded file to R2: {object_key}")
             return object_key
 
         except ClientError as e:
-            raise IOError(f"Failed to upload to R2: {str(e)}")
+            error_msg = f"Failed to upload to R2: {str(e)}"
+            logger.error(error_msg)
+            raise IOError(error_msg)
         except Exception as e:
-            raise IOError(f"Failed to save file: {str(e)}")
+            error_msg = f"Failed to save file: {str(e)}"
+            logger.error(error_msg)
+            raise IOError(error_msg)
 
     @staticmethod
     def validate_file(file_storage):
