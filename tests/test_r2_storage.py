@@ -85,11 +85,10 @@ class TestR2StorageService:
             app.config["R2_BUCKET_NAME"] = "test-bucket"
 
             mock_s3 = MagicMock()
-            # Fail twice, then succeed
             mock_s3.upload_fileobj.side_effect = [
                 EndpointConnectionError(endpoint_url="test"),
                 EndpointConnectionError(endpoint_url="test"),
-                None,  # Success on third attempt
+                None,
             ]
             mock_boto_client.return_value = mock_s3
 
@@ -100,8 +99,7 @@ class TestR2StorageService:
 
             file_storage = FileStorage(stream=img_bytes, filename="test.png")
 
-            # Should succeed after retries
-            with patch("time.sleep"):  # Don't actually sleep in tests
+            with patch("time.sleep"):
                 result = StorageService.save_file(file_storage)
 
             assert result.startswith("images/")
@@ -119,7 +117,6 @@ class TestR2StorageService:
             app.config["R2_BUCKET_NAME"] = "test-bucket"
 
             mock_s3 = MagicMock()
-            # Fail all attempts
             mock_s3.upload_fileobj.side_effect = EndpointConnectionError(
                 endpoint_url="test"
             )
@@ -136,7 +133,7 @@ class TestR2StorageService:
                 with pytest.raises(IOError, match="Failed to upload to R2"):
                     StorageService.save_file(file_storage)
 
-            assert mock_s3.upload_fileobj.call_count == 3  # MAX_RETRIES
+            assert mock_s3.upload_fileobj.call_count == 3
 
     @patch("app.services.storage_service.boto3.client")
     def test_get_image_from_r2(self, mock_boto_client, app, db_session):
@@ -163,7 +160,6 @@ class TestR2StorageService:
             db_session.add(img_record)
             db_session.commit()
 
-            # Mock S3 response
             mock_s3 = MagicMock()
             mock_response = {
                 "Body": MagicMock(read=MagicMock(return_value=b"fake_image_data"))
@@ -190,9 +186,8 @@ class TestR2StorageService:
             app.config["R2_ACCESS_KEY_ID"] = "test_key"
             app.config["R2_SECRET_ACCESS_KEY"] = "test_secret"
             app.config["R2_BUCKET_NAME"] = "test-bucket"
-            app.config["R2_PUBLIC_DOMAIN"] = None  # Use presigned URLs
+            app.config["R2_PUBLIC_DOMAIN"] = None
 
-            # Create test image record
             img_record = Image(
                 filename="test.jpg",
                 filepath="images/20250101_12345678.jpg",
@@ -205,7 +200,6 @@ class TestR2StorageService:
             db_session.add(img_record)
             db_session.commit()
 
-            # Mock S3 client
             mock_s3 = MagicMock()
             mock_s3.generate_presigned_url.return_value = (
                 "https://presigned.url/image.jpg"
@@ -243,14 +237,12 @@ class TestR2StorageService:
             db_session.add(img_record)
             db_session.commit()
 
-            # Mock S3 client (won't be used with custom domain)
             mock_s3 = MagicMock()
             mock_boto_client.return_value = mock_s3
 
             url = StorageService.get_public_url(img_record.id)
 
             assert url == "https://images.example.com/images/20250101_12345678.jpg"
-            # Should NOT call generate_presigned_url with custom domain
             mock_s3.generate_presigned_url.assert_not_called()
 
     @patch("app.services.storage_service.boto3.client")
@@ -329,16 +321,13 @@ class TestR2StorageService:
             db_session.add(img_record)
             db_session.commit()
 
-            # Mock S3 to fail on annotated, succeed on original
             mock_s3 = MagicMock()
 
             def get_object_side_effect(Bucket, Key):
                 if "_annotated" in Key:
-                    # Annotated doesn't exist
                     error_response = {"Error": {"Code": "404"}}
                     raise ClientError(error_response, "GetObject")
                 else:
-                    # Original exists
                     return {
                         "Body": MagicMock(
                             read=MagicMock(return_value=b"original_image")
@@ -352,5 +341,4 @@ class TestR2StorageService:
 
             assert data == b"original_image"
             assert mimetype == "image/jpeg"
-            # Should have called get_object twice (annotated + original fallback)
             assert mock_s3.get_object.call_count == 2
