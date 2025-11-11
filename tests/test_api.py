@@ -14,16 +14,30 @@ class TestHealthEndpoint:
 
 
 class TestImageUpload:
-    def test_upload_image_success(self, client, sample_image):
-        response = client.post(
-            "/api/analyze",
-            data={"image": (sample_image, "test.jpg")},
-            content_type="multipart/form-data",
-        )
-        assert response.status_code == 202
-        data = response.json
-        assert "id" in data
-        assert data["status"] == "processing"
+    @patch("app.services.image_service.process_image_async")
+    @patch("app.services.storage_service.boto3.client")
+    def test_upload_image_success(
+        self, mock_boto_client, mock_celery, client, sample_image, app
+    ):
+        with app.app_context():
+            app.config["R2_ACCOUNT_ID"] = "test_account"
+            app.config["R2_ACCESS_KEY_ID"] = "test_key"
+            app.config["R2_SECRET_ACCESS_KEY"] = "test_secret"
+            app.config["R2_BUCKET_NAME"] = "test-bucket"
+
+            mock_s3 = MagicMock()
+            mock_boto_client.return_value = mock_s3
+            mock_celery.delay.return_value = MagicMock(id="mock-task-id")
+
+            response = client.post(
+                "/api/analyze",
+                data={"image": (sample_image, "test.jpg")},
+                content_type="multipart/form-data",
+            )
+            assert response.status_code == 202
+            data = response.json
+            assert "id" in data
+            assert data["status"] == "processing"
 
     def test_upload_without_image_fails(self, client):
         response = client.post("/api/analyze")

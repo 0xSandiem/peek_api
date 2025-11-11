@@ -157,7 +157,7 @@ class TestR2StorageService:
                 format="JPEG",
                 width=100,
                 height=100,
-                status="completed",
+                processed=True,
             )
             db.session.add(img_record)
             db.session.commit()
@@ -197,7 +197,7 @@ class TestR2StorageService:
                 format="JPEG",
                 width=100,
                 height=100,
-                status="completed",
+                processed=True,
             )
             db.session.add(img_record)
             db.session.commit()
@@ -234,7 +234,7 @@ class TestR2StorageService:
                 format="JPEG",
                 width=100,
                 height=100,
-                status="completed",
+                processed=True,
             )
             db.session.add(img_record)
             db.session.commit()
@@ -316,7 +316,7 @@ class TestR2StorageService:
                 format="JPEG",
                 width=100,
                 height=100,
-                status="completed",
+                processed=True,
             )
             db.session.add(img_record)
             db.session.commit()
