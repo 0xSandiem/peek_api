@@ -1,8 +1,6 @@
-import os
 from io import BytesIO
-from unittest.mock import MagicMock, mock_open, patch
+from unittest.mock import MagicMock, patch
 
-import pytest
 from PIL import Image
 from werkzeug.datastructures import FileStorage
 

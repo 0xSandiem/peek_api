@@ -8,7 +8,6 @@ class SceneDetector:
         hsv = cv2.cvtColor(img_array, cv2.COLOR_RGB2HSV)
         h, s, v = cv2.split(hsv)
 
-        avg_hue = np.mean(h)
         avg_saturation = np.mean(s)
         avg_value = np.mean(v)
 

@@ -1,9 +1,7 @@
 import os
-from io import BytesIO
 
 import cv2
 import numpy as np
-from PIL import Image
 
 
 class AnnotationService:
@@ -23,7 +21,7 @@ class AnnotationService:
             img = cv2.imread(image_data_or_key)
 
         if img is None:
-            raise ValueError(f"Failed to load image")
+            raise ValueError("Failed to load image")
 
         for face in face_locations:
             x = face.get("x", 0)

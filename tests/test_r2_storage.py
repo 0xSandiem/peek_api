@@ -3,7 +3,7 @@ Tests for R2 storage service functionality.
 """
 
 from io import BytesIO
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from botocore.exceptions import ClientError, EndpointConnectionError
@@ -27,7 +27,7 @@ class TestR2StorageService:
             app.config["R2_SECRET_ACCESS_KEY"] = "test_secret"
             app.config["R2_REGION"] = "auto"
 
-            client = StorageService._get_r2_client()
+            StorageService._get_r2_client()  # noqa: F841
 
             mock_boto_client.assert_called_once()
             call_kwargs = mock_boto_client.call_args[1]
@@ -149,7 +149,6 @@ class TestR2StorageService:
             app.config["R2_SECRET_ACCESS_KEY"] = "test_secret"
             app.config["R2_BUCKET_NAME"] = "test-bucket"
 
-            # Create test image record
             img_record = Image(
                 filename="test.jpg",
                 filepath="images/20250101_12345678.jpg",
@@ -226,7 +225,6 @@ class TestR2StorageService:
             app.config["R2_BUCKET_NAME"] = "test-bucket"
             app.config["R2_PUBLIC_DOMAIN"] = "https://images.example.com"
 
-            # Create test image record
             img_record = Image(
                 filename="test.jpg",
                 filepath="images/20250101_12345678.jpg",
@@ -308,7 +306,6 @@ class TestR2StorageService:
             app.config["R2_SECRET_ACCESS_KEY"] = "test_secret"
             app.config["R2_BUCKET_NAME"] = "test-bucket"
 
-            # Create test image record
             img_record = Image(
                 filename="test.jpg",
                 filepath="images/20250101_12345678.jpg",

@@ -29,7 +29,6 @@ def validate_r2_config(app):
         )
         return False
 
-    # Try to verify R2 connection
     try:
         import boto3
         from botocore.exceptions import ClientError, NoCredentialsError
@@ -42,7 +41,6 @@ def validate_r2_config(app):
             region_name=app.config.get("R2_REGION", "auto"),
         )
 
-        # Test bucket access
         s3_client.head_bucket(Bucket=app.config["R2_BUCKET_NAME"])
         logger.info(
             f"R2 storage configured successfully. Bucket: {app.config['R2_BUCKET_NAME']}"
@@ -94,12 +92,11 @@ def create_app(config_name=None):
     )
 
     with app.app_context():
-        from app import models
+        from app import models  # noqa: F401
         from app.routes import api
 
         app.register_blueprint(api.bp)
 
-        # Validate R2 configuration on startup
         validate_r2_config(app)
 
     return app

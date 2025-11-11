@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import pytest
 
 from app import db
@@ -65,16 +63,18 @@ class TestImageModel:
             long_filename = "a" * 256
 
             with pytest.raises(ValueError):
-                image = Image(filename=long_filename, filepath="/uploads/long.jpg")
+                Image(
+                    filename=long_filename, filepath="/uploads/long.jpg"
+                )  # noqa: F841
 
 
 class TestImageModelSecurity:
     def test_path_traversal_prevention(self, app):
         with app.app_context():
             with pytest.raises(ValueError):
-                image = Image(
+                Image(
                     filename="test.jpg", filepath="/uploads/../../../etc/passwd"
-                )
+                )  # noqa: F841
 
     def test_filename_sanitization(self, app):
         with app.app_context():
@@ -85,7 +85,9 @@ class TestImageModelSecurity:
     def test_null_byte_injection_prevention(self, app):
         with app.app_context():
             with pytest.raises(ValueError):
-                image = Image(filename="test\x00.jpg", filepath="/uploads/test.jpg")
+                Image(
+                    filename="test\x00.jpg", filepath="/uploads/test.jpg"
+                )  # noqa: F841
 
     def test_error_message_sanitization(self, app):
         with app.app_context():
@@ -174,7 +176,6 @@ class TestInsightsModel:
             db.session.add(insights)
             db.session.commit()
 
-            image_id = image.id
             insights_id = insights.id
 
             db.session.delete(image)
@@ -207,7 +208,7 @@ class TestInsightsModelValidation:
             db.session.commit()
 
             with pytest.raises(ValueError):
-                insights = Insights(image_id=image.id, brightness=256)
+                Insights(image_id=image.id, brightness=256)  # noqa: F841
 
     def test_brightness_validation_min(self, app):
         with app.app_context():
@@ -216,7 +217,7 @@ class TestInsightsModelValidation:
             db.session.commit()
 
             with pytest.raises(ValueError):
-                insights = Insights(image_id=image.id, brightness=-1)
+                Insights(image_id=image.id, brightness=-1)  # noqa: F841
 
     def test_quality_score_validation_max(self, app):
         with app.app_context():
@@ -225,7 +226,7 @@ class TestInsightsModelValidation:
             db.session.commit()
 
             with pytest.raises(ValueError):
-                insights = Insights(image_id=image.id, quality_score=101)
+                Insights(image_id=image.id, quality_score=101)  # noqa: F841
 
     def test_quality_score_validation_min(self, app):
         with app.app_context():
@@ -234,7 +235,7 @@ class TestInsightsModelValidation:
             db.session.commit()
 
             with pytest.raises(ValueError):
-                insights = Insights(image_id=image.id, quality_score=-1)
+                Insights(image_id=image.id, quality_score=-1)  # noqa: F841
 
     def test_scene_confidence_validation_max(self, app):
         with app.app_context():
@@ -243,7 +244,7 @@ class TestInsightsModelValidation:
             db.session.commit()
 
             with pytest.raises(ValueError):
-                insights = Insights(image_id=image.id, scene_confidence=1.1)
+                Insights(image_id=image.id, scene_confidence=1.1)  # noqa: F841
 
     def test_scene_confidence_validation_min(self, app):
         with app.app_context():
@@ -252,4 +253,4 @@ class TestInsightsModelValidation:
             db.session.commit()
 
             with pytest.raises(ValueError):
-                insights = Insights(image_id=image.id, scene_confidence=-0.1)
+                Insights(image_id=image.id, scene_confidence=-0.1)  # noqa: F841

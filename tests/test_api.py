@@ -1,7 +1,4 @@
-import json
 from unittest.mock import MagicMock, patch
-
-import pytest
 
 
 class TestHealthEndpoint:
@@ -14,10 +11,17 @@ class TestHealthEndpoint:
 
 
 class TestImageUpload:
-    @patch("app.services.image_service.process_image_async")
+    @patch("tasks.celery_tasks.process_image_async")
+    @patch("app.services.storage_service.StorageService.get_public_url")
     @patch("app.services.storage_service.boto3.client")
     def test_upload_image_success(
-        self, mock_boto_client, mock_celery, client, sample_image, app
+        self,
+        mock_boto_client,
+        mock_get_public_url,
+        mock_celery,
+        client,
+        sample_image,
+        app,
     ):
         with app.app_context():
             app.config["R2_ACCOUNT_ID"] = "test_account"
@@ -28,6 +32,7 @@ class TestImageUpload:
             mock_s3 = MagicMock()
             mock_boto_client.return_value = mock_s3
             mock_celery.delay.return_value = MagicMock(id="mock-task-id")
+            mock_get_public_url.return_value = "https://example.com/test.jpg"
 
             response = client.post(
                 "/api/analyze",
@@ -38,6 +43,7 @@ class TestImageUpload:
             data = response.json
             assert "id" in data
             assert data["status"] == "processing"
+            assert "public_url" in data
 
     def test_upload_without_image_fails(self, client):
         response = client.post("/api/analyze")

@@ -1,7 +1,7 @@
 import logging
 from io import BytesIO
 
-from flask import Blueprint, current_app, jsonify, request, send_file
+from flask import Blueprint, jsonify, request, send_file
 from werkzeug.utils import secure_filename
 
 from app import db
@@ -135,18 +135,22 @@ def get_image_url(image_id):
         expiration = request.args.get("expiration", 86400, type=int)
 
         if expiration < 60 or expiration > 604800:
-            return jsonify(
-                {"error": "Expiration must be between 60 and 604800 seconds"}
-            ), 400
+            return (
+                jsonify({"error": "Expiration must be between 60 and 604800 seconds"}),
+                400,
+            )
 
         public_url = StorageService.get_public_url(image_id, expiration=expiration)
 
         if public_url is None:
             return jsonify({"error": "Image not found"}), 404
 
-        return jsonify(
-            {"image_id": image_id, "url": public_url, "expires_in": expiration}
-        ), 200
+        return (
+            jsonify(
+                {"image_id": image_id, "url": public_url, "expires_in": expiration}
+            ),
+            200,
+        )
 
     except ValueError:
         return jsonify({"error": "Invalid image ID"}), 400
