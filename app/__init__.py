@@ -18,7 +18,15 @@ def create_app(config_name=None):
     app.config.from_object(config_by_name.get(config_name, config_by_name["default"]))
 
     db.init_app(app)
-    CORS(app)
+
+    allowed_origins = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:8000').split(',')
+    CORS(
+        app,
+        origins=allowed_origins,
+        supports_credentials=True,
+        allow_headers=['Content-Type', 'Authorization'],
+        methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+    )
 
     with app.app_context():
         from app import models

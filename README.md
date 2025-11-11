@@ -2,6 +2,10 @@
 
 Image analysis API with computer vision capabilities. Processes images asynchronously to extract insights including dominant colors, quality metrics, face detection, text extraction (OCR), and scene classification.
 
+## System Architecture
+
+![Peek System Architecture](./diagram.png)
+
 ## Quick Start
 
 ### Prerequisites
