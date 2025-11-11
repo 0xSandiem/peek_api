@@ -81,7 +81,7 @@ def create_app(config_name=None):
     db.init_app(app)
 
     allowed_origins = os.environ.get(
-        "CORS_ALLOWED_ORIGINS", "http://localhost:8000"
+        "CORS_ALLOWED_ORIGINS", "http://localhost:8000,https://peek.cx"
     ).split(",")
     CORS(
         app,
