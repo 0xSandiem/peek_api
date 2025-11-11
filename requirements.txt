@@ -2,6 +2,7 @@
 flask
 flask-sqlalchemy
 flask-cors
+gunicorn
 
 # Computer vision and image processing
 opencv-python==4.10.0.84
