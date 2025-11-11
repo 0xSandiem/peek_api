@@ -431,20 +431,6 @@ Look for:
 
 ---
 
-### Step 4: Migrate Existing Data (Optional)
-
-If you have existing local images to migrate to R2:
-
-```bash
-# Ensure your .env has R2 credentials configured
-python3 scripts/migrate_local_to_r2.py --dry-run
-
-# Review the dry-run output, then execute:
-python3 scripts/migrate_local_to_r2.py
-```
-
----
-
 ### Production Configuration Tips
 
 #### Scaling
@@ -551,7 +537,7 @@ Compare to AWS S3: ~$130-150/month with egress fees
 #### Images Not Uploading
 - Check R2 API token permissions (need Object Read & Write)
 - Review web service logs for R2 errors
-- Test R2 credentials with the migration script locally
+- Test R2 credentials locally with a simple upload test
 
 #### Database Migration Issues
 - Web service runs `alembic upgrade head` on startup
