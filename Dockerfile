@@ -19,6 +19,6 @@ RUN chmod +x scripts/*.sh
 
 ENV PYTHONUNBUFFERED=1
 
-EXPOSE 5000
+EXPOSE $PORT
 
-CMD ["python3", "run.py"]
+CMD ["./scripts/entrypoint-web.sh"]
