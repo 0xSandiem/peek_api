@@ -4,9 +4,11 @@ flask-sqlalchemy
 flask-cors
 
 # Computer vision and image processing
-opencv-python
-numpy
+opencv-python==4.10.0.84
+numpy==1.26.4
 pillow
+scikit-learn
+pytesseract
 
 # Task queue and caching
 celery
@@ -15,6 +17,13 @@ redis
 # Database and environment
 psycopg2-binary
 python-dotenv
+alembic
 
 # Testing
 pytest
+pytest-cov
+
+# Development tools
+black
+flake8
+isort

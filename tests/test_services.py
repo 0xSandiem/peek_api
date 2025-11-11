@@ -1,3 +1,4 @@
+import os
 from io import BytesIO
 from unittest.mock import MagicMock, mock_open, patch
 
@@ -7,60 +8,124 @@ from werkzeug.datastructures import FileStorage
 
 
 class TestStorageService:
-    def test_save_file_returns_filepath(self):
+    def test_save_file_returns_filepath(self, app):
         from app.services.storage_service import StorageService
 
-        img = Image.new("RGB", (100, 100), color="red")
-        img_bytes = BytesIO()
-        img.save(img_bytes, format="JPEG")
-        img_bytes.seek(0)
+        with app.app_context():
+            img = Image.new("RGB", (100, 100), color="red")
+            img_bytes = BytesIO()
+            img.save(img_bytes, format="JPEG")
+            img_bytes.seek(0)
 
-        file_storage = FileStorage(stream=img_bytes, filename="test.jpg")
+            file_storage = FileStorage(stream=img_bytes, filename="test.jpg")
 
-        with patch("app.services.storage_service.os.makedirs"):
-            with patch("builtins.open", mock_open()):
-                result = StorageService.save_file(file_storage)
-                assert isinstance(result, str)
-                assert result.endswith(".jpg")
+            result = StorageService.save_file(file_storage)
+            assert isinstance(result, str)
+            assert ".jpg" in result
+            assert os.path.exists(result)
 
-    def test_validate_file_valid_image(self):
+    def test_validate_file_valid_image(self, app):
         from app.services.storage_service import StorageService
 
-        img = Image.new("RGB", (100, 100), color="blue")
-        img_bytes = BytesIO()
-        img.save(img_bytes, format="PNG")
-        img_bytes.seek(0)
+        with app.app_context():
+            img = Image.new("RGB", (100, 100), color="blue")
+            img_bytes = BytesIO()
+            img.save(img_bytes, format="PNG")
+            img_bytes.seek(0)
 
-        file_storage = FileStorage(stream=img_bytes, filename="test.png")
+            file_storage = FileStorage(stream=img_bytes, filename="test.png")
 
-        result = StorageService.validate_file(file_storage)
-        assert result is True
+            result = StorageService.validate_file(file_storage)
+            assert result is True
 
-    def test_validate_file_invalid_extension(self):
+    def test_validate_file_invalid_extension(self, app):
         from app.services.storage_service import StorageService
 
-        file_storage = FileStorage(stream=BytesIO(b"data"), filename="test.txt")
+        with app.app_context():
+            file_storage = FileStorage(stream=BytesIO(b"data"), filename="test.txt")
 
-        result = StorageService.validate_file(file_storage)
-        assert result is False
+            result = StorageService.validate_file(file_storage)
+            assert result is False
+
+    def test_get_image_returns_bytes(self, app):
+        from app import db
+        from app.models import Image as ImageModel
+        from app.services.storage_service import StorageService
+
+        with app.app_context():
+            img = Image.new("RGB", (50, 50), color="green")
+            img_bytes = BytesIO()
+            img.save(img_bytes, format="JPEG")
+            img_bytes.seek(0)
+
+            file_storage = FileStorage(stream=img_bytes, filename="get_test.jpg")
+            filepath = StorageService.save_file(file_storage)
+
+            image_record = ImageModel(
+                filename="get_test.jpg",
+                filepath=filepath,
+                format="JPEG",
+                width=50,
+                height=50,
+            )
+            db.session.add(image_record)
+            db.session.commit()
+
+            data, mimetype = StorageService.get_image(image_record.id)
+
+            assert data is not None
+            assert isinstance(data, bytes)
+            assert mimetype == "image/jpeg"
+
+    def test_get_image_not_found(self, app):
+        from app.services.storage_service import StorageService
+
+        with app.app_context():
+            data, mimetype = StorageService.get_image(99999)
+
+            assert data is None
+            assert mimetype is None
 
 
 class TestImageService:
-    def test_create_analysis_task_returns_id(self):
+    def test_create_analysis_task_returns_dict(self, app):
         from app.services.image_service import ImageService
 
-        with patch("app.services.image_service.db.session"):
+        with app.app_context():
             result = ImageService.create_analysis_task(
-                "/path/to/image.jpg", "image.jpg"
+                "/path/to/image_service_test.jpg", "image.jpg", 1024, "JPEG", 100, 100
             )
-            assert isinstance(result, (int, dict))
+            assert isinstance(result, dict)
+            assert "id" in result
+            assert "status" in result
+            assert result["status"] == "processing"
 
-    def test_get_analysis_results_returns_data(self):
+    def test_get_analysis_results_not_found(self, app):
         from app.services.image_service import ImageService
 
-        with patch("app.services.image_service.db.session"):
-            result = ImageService.get_analysis_results(1)
-            assert result is None or isinstance(result, dict)
+        with app.app_context():
+            result = ImageService.get_analysis_results(99999)
+            assert result is None
+
+    def test_get_analysis_results_processing(self, app):
+        from app import db
+        from app.models import Image as ImageModel
+        from app.services.image_service import ImageService
+
+        with app.app_context():
+            image = ImageModel(
+                filename="processing.jpg",
+                filepath="/uploads/processing_test.jpg",
+                processed=False,
+            )
+            db.session.add(image)
+            db.session.commit()
+
+            result = ImageService.get_analysis_results(image.id)
+
+            assert result is not None
+            assert result["status"] == "processing"
+            assert result["id"] == image.id
 
 
 class TestCVService:

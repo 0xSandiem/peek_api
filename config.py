@@ -12,10 +12,15 @@ class Config:
     MAX_FILE_SIZE = int(os.environ.get("MAX_FILE_SIZE", 16 * 1024 * 1024))
     ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "bmp", "webp"}
 
-    SQLALCHEMY_DATABASE_URI = (
+    database_url = (
         os.environ.get("DATABASE_URL")
         or "postgresql://peek_user:peek_password@localhost:5432/peek_db"
     )
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    SQLALCHEMY_DATABASE_URI = database_url
+
+    PORT = int(os.environ.get("PORT", 5000))
 
     CELERY_BROKER_URL = (
         os.environ.get("CELERY_BROKER_URL")
@@ -28,15 +33,20 @@ class Config:
         or "redis://localhost:6379/0"
     )
 
+    CELERYD_POOL_RESTARTS = True
+
 
 class DevelopmentConfig(Config):
     DEBUG = True
     TESTING = False
+    CELERYD_POOL = os.environ.get("CELERYD_POOL", "solo")
 
 
 class ProductionConfig(Config):
     DEBUG = False
     TESTING = False
+    CELERYD_POOL = os.environ.get("CELERYD_POOL", "prefork")
+    CELERYD_CONCURRENCY = int(os.environ.get("CELERYD_CONCURRENCY", 4))
 
 
 class TestingConfig(Config):

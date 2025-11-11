@@ -8,7 +8,9 @@ class TestHealthEndpoint:
     def test_health_check_returns_ok(self, client):
         response = client.get("/api/health")
         assert response.status_code == 200
-        assert response.json == {"status": "ok"}
+        assert response.json["status"] == "ok"
+        assert "database" in response.json
+        assert "redis" in response.json
 
 
 class TestImageUpload:
@@ -38,8 +40,10 @@ class TestImageUpload:
         assert "error" in response.json
 
     def test_upload_file_too_large_fails(self, client, large_image):
-        with patch("app.routes.api.current_app") as mock_app:
-            mock_app.config = {"MAX_FILE_SIZE": 1024}
+        with patch(
+            "app.services.storage_service.StorageService.validate_file"
+        ) as mock_validate:
+            mock_validate.return_value = False
             response = client.post(
                 "/api/analyze",
                 data={"image": (large_image, "large.jpg")},

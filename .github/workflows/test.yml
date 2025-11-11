@@ -1,0 +1,78 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, develop, feature/*]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: peek_user
+          POSTGRES_PASSWORD: peek_password
+          POSTGRES_DB: peek_test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+          cache: "pip"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr libgl1 libglib2.0-0
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest-cov
+
+      - name: Run migrations
+        env:
+          DATABASE_URL: postgresql://peek_user:peek_password@localhost:5432/peek_test_db
+          FLASK_ENV: testing
+        run: |
+          alembic upgrade head
+
+      - name: Run tests with coverage
+        env:
+          DATABASE_URL: postgresql://peek_user:peek_password@localhost:5432/peek_test_db
+          REDIS_URL: redis://localhost:6379/0
+          FLASK_ENV: testing
+        run: |
+          pytest --cov=app --cov-report=xml --cov-report=term -v
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        if: github.event_name == 'pull_request'
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false
