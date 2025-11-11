@@ -1,5 +1,3 @@
-import os
-import tempfile
 from io import BytesIO
 
 import pytest

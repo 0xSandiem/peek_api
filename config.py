@@ -12,6 +12,13 @@ class Config:
     MAX_FILE_SIZE = int(os.environ.get("MAX_FILE_SIZE", 16 * 1024 * 1024))
     ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "bmp", "webp"}
 
+    R2_ACCOUNT_ID = os.environ.get("R2_ACCOUNT_ID")
+    R2_ACCESS_KEY_ID = os.environ.get("R2_ACCESS_KEY_ID")
+    R2_SECRET_ACCESS_KEY = os.environ.get("R2_SECRET_ACCESS_KEY")
+    R2_BUCKET_NAME = os.environ.get("R2_BUCKET_NAME", "peek")
+    R2_REGION = os.environ.get("R2_REGION", "auto")
+    R2_PUBLIC_DOMAIN = os.environ.get("R2_PUBLIC_DOMAIN")
+
     database_url = (
         os.environ.get("DATABASE_URL")
         or "postgresql://peek_user:peek_password@localhost:5432/peek_db"
