@@ -53,7 +53,6 @@ def analyze_image():
         width, height = StorageService.get_image_dimensions(file)
         file.seek(0)
         format = StorageService.get_image_format(file)
-
         file.seek(0, 2)
         file_size = file.tell()
         file.seek(0)
