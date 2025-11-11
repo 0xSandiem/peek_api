@@ -5,23 +5,52 @@
 ```bash
 git clone https://github.com/0xSandiem/peek_api.git
 cd peek_api
-pip install -r requirements.txt
+make install
 cp .env.example .env
-docker-compose up -d postgres redis
-python run.py
+make docker-up
+make dev
 ```
+
+## Pre-commit Hooks
+
+Install pre-commit hooks to automatically check code quality before commits:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+Run hooks manually on all files:
+
+```bash
+pre-commit run --all-files
+```
+
+The hooks will automatically run Black, Flake8, and isort checks.
 
 ## Running Tests
 
 ```bash
-pytest tests/ --cov=app
+# Run tests with coverage
+make test
+
+# Run tests in watch mode
+make test-watch
 ```
 
 ## Code Style
 
 - Python: Black, Flake8, isort
-- Format before committing: `black app/ tests/ && isort app/ tests/`
-- Linting: `flake8 app/ tests/`
+
+Check code style:
+```bash
+make lint
+```
+
+Auto-format code:
+```bash
+make format
+```
 
 ## Commit Conventions
 
