@@ -13,6 +13,7 @@ bp = Blueprint("api", __name__, url_prefix="/api")
 @bp.route("/health", methods=["GET"])
 def health_check():
     health_status = {"status": "ok"}
+    critical_failure = False
 
     try:
         db.session.execute(db.text("SELECT 1"))
@@ -20,6 +21,7 @@ def health_check():
     except Exception:
         health_status["database"] = "disconnected"
         health_status["status"] = "degraded"
+        critical_failure = True
 
     try:
         from celery import current_app as celery_app
@@ -28,9 +30,8 @@ def health_check():
         health_status["redis"] = "connected"
     except Exception:
         health_status["redis"] = "disconnected"
-        health_status["status"] = "degraded"
 
-    status_code = 200 if health_status["status"] == "ok" else 503
+    status_code = 503 if critical_failure else 200
     return jsonify(health_status), status_code
 
 
