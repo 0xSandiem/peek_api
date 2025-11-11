@@ -35,13 +35,17 @@ jobs:
         ports:
           - 6379:6379
 
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10']
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.9"
+          python-version: ${{ matrix.python-version }}
           cache: "pip"
 
       - name: Install system dependencies
@@ -71,8 +75,8 @@ jobs:
           pytest --cov=app --cov-report=xml --cov-report=term -v
 
       - name: Upload coverage reports
-        uses: codecov/codecov-action@v3
-        if: github.event_name == 'pull_request'
+        uses: codecov/codecov-action@v4
         with:
           files: ./coverage.xml
-          fail_ci_if_error: false
+          flags: api
+          name: api-coverage
