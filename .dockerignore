@@ -40,4 +40,3 @@ tests/
 .github/
 docker-compose.yml
 docker-compose.override.yml
-alembic.ini

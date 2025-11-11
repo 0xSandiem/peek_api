@@ -26,6 +26,9 @@ alembic
 # Testing
 pytest
 pytest-cov
+pytest-mock
+pytest-asyncio
+factory-boy
 
 # Development tools
 black

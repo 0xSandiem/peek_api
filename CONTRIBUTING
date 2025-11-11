@@ -1,0 +1,85 @@
+# Contributing to Peek API
+
+## Development Setup
+
+```bash
+git clone https://github.com/0xSandiem/peek_api.git
+cd peek_api
+make install
+cp .env.example .env
+make docker-up
+make dev
+```
+
+## Pre-commit Hooks
+
+Install pre-commit hooks to automatically check code quality before commits:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+Run hooks manually on all files:
+
+```bash
+pre-commit run --all-files
+```
+
+The hooks will automatically run Black, Flake8, and isort checks.
+
+## Running Tests
+
+```bash
+# Run tests with coverage
+make test
+
+# Run tests in watch mode
+make test-watch
+```
+
+## Code Style
+
+- Python: Black, Flake8, isort
+
+Check code style:
+```bash
+make lint
+```
+
+Auto-format code:
+```bash
+make format
+```
+
+## Commit Conventions
+
+Follow Conventional Commits format:
+
+```
+feat(scope): add new feature
+fix(scope): fix bug
+docs(scope): update documentation
+build(scope): update dependencies
+chore(scope): update configuration
+```
+
+Examples:
+- `feat(analyzer): add edge detection`
+- `fix(api): handle timeout errors`
+- `docs(readme): update installation steps`
+
+## Pull Request Process
+
+1. Create feature branch from `main`
+2. Write tests for new features
+3. Ensure all tests pass
+4. Update documentation if needed
+5. Create PR with clear description
+6. Wait for review
+
+## Code Review
+
+- PRs require one approval
+- All CI checks must pass
+- Address review comments promptly
