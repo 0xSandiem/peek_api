@@ -1,0 +1,56 @@
+# Contributing to Peek API
+
+## Development Setup
+
+```bash
+git clone https://github.com/0xSandiem/peek_api.git
+cd peek_api
+pip install -r requirements.txt
+cp .env.example .env
+docker-compose up -d postgres redis
+python run.py
+```
+
+## Running Tests
+
+```bash
+pytest tests/ --cov=app
+```
+
+## Code Style
+
+- Python: Black, Flake8, isort
+- Format before committing: `black app/ tests/ && isort app/ tests/`
+- Linting: `flake8 app/ tests/`
+
+## Commit Conventions
+
+Follow Conventional Commits format:
+
+```
+feat(scope): add new feature
+fix(scope): fix bug
+docs(scope): update documentation
+build(scope): update dependencies
+chore(scope): update configuration
+```
+
+Examples:
+- `feat(analyzer): add edge detection`
+- `fix(api): handle timeout errors`
+- `docs(readme): update installation steps`
+
+## Pull Request Process
+
+1. Create feature branch from `main`
+2. Write tests for new features
+3. Ensure all tests pass
+4. Update documentation if needed
+5. Create PR with clear description
+6. Wait for review
+
+## Code Review
+
+- PRs require one approval
+- All CI checks must pass
+- Address review comments promptly
