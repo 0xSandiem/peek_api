@@ -1,3 +1,4 @@
+import logging
 from io import BytesIO
 
 from flask import Blueprint, current_app, jsonify, request, send_file
@@ -8,6 +9,7 @@ from app.services.image_service import ImageService
 from app.services.storage_service import StorageService
 
 bp = Blueprint("api", __name__, url_prefix="/api")
+logger = logging.getLogger(__name__)
 
 
 @bp.route("/health", methods=["GET"])
@@ -63,14 +65,16 @@ def analyze_image():
             filepath, secure_filename(file.filename), file_size, format, width, height
         )
 
-        public_url = StorageService.get_public_url(result["image_id"], expiration=86400)
+        public_url = StorageService.get_public_url(result["id"], expiration=86400)
         result["public_url"] = public_url
 
         return jsonify(result), 202
 
     except ValueError as e:
+        logger.error(f"Validation error in analyze_image: {str(e)}")
         return jsonify({"error": str(e)}), 400
     except Exception as e:
+        logger.exception(f"Error in analyze_image: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
 
 
