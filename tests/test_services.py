@@ -8,10 +8,19 @@ from werkzeug.datastructures import FileStorage
 
 
 class TestStorageService:
-    def test_save_file_returns_filepath(self, app):
+    @patch("app.services.storage_service.boto3.client")
+    def test_save_file_returns_filepath(self, mock_boto_client, app):
         from app.services.storage_service import StorageService
 
         with app.app_context():
+            app.config["R2_ACCOUNT_ID"] = "test_account"
+            app.config["R2_ACCESS_KEY_ID"] = "test_key"
+            app.config["R2_SECRET_ACCESS_KEY"] = "test_secret"
+            app.config["R2_BUCKET_NAME"] = "test-bucket"
+
+            mock_s3 = MagicMock()
+            mock_boto_client.return_value = mock_s3
+
             img = Image.new("RGB", (100, 100), color="red")
             img_bytes = BytesIO()
             img.save(img_bytes, format="JPEG")
@@ -22,7 +31,7 @@ class TestStorageService:
             result = StorageService.save_file(file_storage)
             assert isinstance(result, str)
             assert ".jpg" in result
-            assert os.path.exists(result)
+            assert result.startswith("images/")
 
     def test_validate_file_valid_image(self, app):
         from app.services.storage_service import StorageService
@@ -47,23 +56,28 @@ class TestStorageService:
             result = StorageService.validate_file(file_storage)
             assert result is False
 
-    def test_get_image_returns_bytes(self, app):
+    @patch("app.services.storage_service.boto3.client")
+    def test_get_image_returns_bytes(self, mock_boto_client, app):
         from app import db
         from app.models import Image as ImageModel
         from app.services.storage_service import StorageService
 
         with app.app_context():
-            img = Image.new("RGB", (50, 50), color="green")
-            img_bytes = BytesIO()
-            img.save(img_bytes, format="JPEG")
-            img_bytes.seek(0)
+            app.config["R2_ACCOUNT_ID"] = "test_account"
+            app.config["R2_ACCESS_KEY_ID"] = "test_key"
+            app.config["R2_SECRET_ACCESS_KEY"] = "test_secret"
+            app.config["R2_BUCKET_NAME"] = "test-bucket"
 
-            file_storage = FileStorage(stream=img_bytes, filename="get_test.jpg")
-            filepath = StorageService.save_file(file_storage)
+            mock_s3 = MagicMock()
+            mock_response = {
+                "Body": MagicMock(read=MagicMock(return_value=b"test_image_data"))
+            }
+            mock_s3.get_object.return_value = mock_response
+            mock_boto_client.return_value = mock_s3
 
             image_record = ImageModel(
                 filename="get_test.jpg",
-                filepath=filepath,
+                filepath="images/test.jpg",
                 format="JPEG",
                 width=50,
                 height=50,

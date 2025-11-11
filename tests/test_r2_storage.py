@@ -10,6 +10,8 @@ from botocore.exceptions import ClientError, EndpointConnectionError
 from PIL import Image as PILImage
 from werkzeug.datastructures import FileStorage
 
+from app import db
+
 
 class TestR2StorageService:
     """Test R2-specific storage service methods."""
@@ -130,13 +132,13 @@ class TestR2StorageService:
             file_storage = FileStorage(stream=img_bytes, filename="test.jpg")
 
             with patch("time.sleep"):
-                with pytest.raises(IOError, match="Failed to upload to R2"):
+                with pytest.raises(IOError, match="Failed to save file"):
                     StorageService.save_file(file_storage)
 
             assert mock_s3.upload_fileobj.call_count == 3
 
     @patch("app.services.storage_service.boto3.client")
-    def test_get_image_from_r2(self, mock_boto_client, app, db_session):
+    def test_get_image_from_r2(self, mock_boto_client, app):
         """Test retrieving image from R2."""
         from app.models import Image
         from app.services.storage_service import StorageService
@@ -157,8 +159,8 @@ class TestR2StorageService:
                 height=100,
                 status="completed",
             )
-            db_session.add(img_record)
-            db_session.commit()
+            db.session.add(img_record)
+            db.session.commit()
 
             mock_s3 = MagicMock()
             mock_response = {
@@ -176,7 +178,7 @@ class TestR2StorageService:
             )
 
     @patch("app.services.storage_service.boto3.client")
-    def test_get_public_url_with_presigned(self, mock_boto_client, app, db_session):
+    def test_get_public_url_with_presigned(self, mock_boto_client, app):
         """Test generating presigned URL."""
         from app.models import Image
         from app.services.storage_service import StorageService
@@ -197,8 +199,8 @@ class TestR2StorageService:
                 height=100,
                 status="completed",
             )
-            db_session.add(img_record)
-            db_session.commit()
+            db.session.add(img_record)
+            db.session.commit()
 
             mock_s3 = MagicMock()
             mock_s3.generate_presigned_url.return_value = (
@@ -212,7 +214,7 @@ class TestR2StorageService:
             mock_s3.generate_presigned_url.assert_called_once()
 
     @patch("app.services.storage_service.boto3.client")
-    def test_get_public_url_with_custom_domain(self, mock_boto_client, app, db_session):
+    def test_get_public_url_with_custom_domain(self, mock_boto_client, app):
         """Test public URL with custom domain."""
         from app.models import Image
         from app.services.storage_service import StorageService
@@ -234,8 +236,8 @@ class TestR2StorageService:
                 height=100,
                 status="completed",
             )
-            db_session.add(img_record)
-            db_session.commit()
+            db.session.add(img_record)
+            db.session.commit()
 
             mock_s3 = MagicMock()
             mock_boto_client.return_value = mock_s3
@@ -295,9 +297,7 @@ class TestR2StorageService:
             )
 
     @patch("app.services.storage_service.boto3.client")
-    def test_get_annotated_image_falls_back_to_original(
-        self, mock_boto_client, app, db_session
-    ):
+    def test_get_annotated_image_falls_back_to_original(self, mock_boto_client, app):
         """Test annotated image fallback when annotation doesn't exist."""
         from app.models import Image
         from app.services.storage_service import StorageService
@@ -318,8 +318,8 @@ class TestR2StorageService:
                 height=100,
                 status="completed",
             )
-            db_session.add(img_record)
-            db_session.commit()
+            db.session.add(img_record)
+            db.session.commit()
 
             mock_s3 = MagicMock()
 
